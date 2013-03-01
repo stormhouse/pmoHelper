@@ -1,0 +1,23 @@
+{
+	"manifest_version":2,
+	"name":"pmoHelper",
+	"description":"pmoHelper",
+	"version":"1.0",
+	"content_scripts":[
+		{
+			"exclude_globs":[  ],
+			"include_globs":[ "*" ],
+			"js":[ "pmoHelper-user.js" ],
+			"matches":[   "http://ultrapower.com.cn/*",
+				"http://60.247.77.186/*"
+			],
+			"run_at":"document_end"
+		}
+	],
+	"browser_action": {
+		"default_title": "PMO-helper",
+		"default_icon": "icon.png"
+	},
+	"converted_from_user_script":true,
+	"permissions": [ "tabs" ]
+}
