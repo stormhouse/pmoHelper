@@ -1,24 +1,28 @@
 {
-	"name":"pmoHelper",
-	"version":"1.0",
-	"manifest_version":2,
-	"description":"pmoHelper",
-	"content_scripts":[
-		{
-			"exclude_globs":[  ],
-			"include_globs":[ "*" ],
-			"js":["jquery.js", "pmoHelper-user.js"],
-			"matches":[   "http://ultrapower.com.cn/*",
-				"http://60.247.77.186/*"
-			],
-			"run_at":"document_end"
-		}
-	],
-	"browser_action": {
-		"default_title": "PMO-helper",
-		"default_icon": "icon.png",
-		"default_popup": "popup.html"
-	},
-	"converted_from_user_script":true,
-	"permissions": [ "tabs" ]
+  "name": "pmoHelper",
+  "version": "1.3",
+  "manifest_version": 2,
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "description": "pmoHelper",
+  "content_scripts": [
+    {
+      "exclude_globs": [  ],
+      "include_globs": [ "*" ],
+      "js": ["lib/jquery.js", "lib/backbone-localstorage.js", "pmoHelper-user.js"],
+      "matches": [   "http://ultrapower.com.cn/*",
+        "http://60.247.77.186/*",
+        "http://60.247.77.194/*"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "browser_action": {
+    "default_title": "PMO-helper",
+    "default_icon": "icon.png",
+    "default_popup": "popup.html"
+  },
+  "converted_from_user_script": true,
+  "permissions": [ "tabs" ]
 }

@@ -9,31 +9,174 @@
 // ==/UserScript==
 (function () {
 
+//  var s = new StormStore('pmo');
+//  var dailyObj = s.find({id: 'pmo'});
+//  if(!dailyObj)
+//    dailyObj = s.create({id: 'pmo'});
+//  console.log(dailyObj.itemcode)
+  var dailyJob;
   var currentUrl = window.location.href;
+
+  var commit_url = "http://60.247.77.194/ultrapmo/myproject/saveDaily.action";
+  var project_url = "http://60.247.77.194/ultrapmo/myproject/findProjectNo.action?q=";//up-2013-036028
   var ss = currentUrl.split('60.247.77.186')
   var isPmoPosition = ss.length > 1 ? true : false;
   var isNotifyOn = (window.webkitNotifications && window.webkitNotifications.checkPermission() == 0) ? true : false;
 
+//  开启提醒
   if(isPmoPosition && !isNotifyOn){
     openNotify();
   }
-
+//  每日提醒
   if(isNotifyOn){
     showDailyNotify();
   }
-
+//  自动登录
   if(isPmoPosition){
-    //3秒后执行，防止img.src没有加载上来
-    setTimeout(autoLogin, 3000);
-  }
-
-  //pmo页面
-  function autoLogin() {
     var image = $('#imgObj');
-    if (image.length !== 1) {
-      return 0;
+    image.load(function(){
+      autoLogin();
+    });
+  }
+//  批量填写日报
+  chrome.extension.sendRequest({method: "getDailyJob"}, function(response) {
+    var dt = $('#dailyTable');
+    if(dt.length == 0) return ;
+    dailyJob = JSON.parse(response.dailyJob);
+
+    $.ajax({
+      async: true,
+      type: 'get',
+      url: project_url+dailyJob.itemcode,
+      dataType: 'json',
+      success: function (data) {
+        fillBathDailyTable(data.responseText, dailyJob);
+      },
+      error: function (data, textStatus) {
+        fillBathDailyTable(data.responseText, dailyJob);
+      }
+    });
+  });
+
+  function fillBathDailyTable(code_name, dailyJob){
+    //常量
+    var manHour = 8;
+    var workPlace = '公司';
+    var baseSchema = 'WF:UL_DA_DLPS';//开发任务
+    baseSchema = dailyJob.baseSchema;
+    var jobs = dailyJob.jobs;
+
+    var code = code_name.split('|')[0];
+    var name = code_name.split('|')[1];
+    var dt = $('#dailyTable');
+    //TODO 判断某一天，是否已经写日志了
+    addDaily();
+    addDaily();
+    addDaily();
+    addDaily();
+    var cDate = new Date();
+    var cDay = cDate.getDay();
+    if(cDay != 5){
+      alert('今天不是周五，亲～～，您太捉鸡了吧');
+      return ;
+    }
+    dt.find('[flag=projectNo]').val(code);
+    dt.find('[flag=projectName]').val(name);
+    var cm = (cDate.getMonth()+1);
+    cm = cm>9 ? cm : '0'+cm
+    var yymm = cDate.getFullYear()+'-'+cm;
+    var h9  = ' 09:00:00';
+    var h18 = ' 18:00:00';
+    var monDate = new Date(cDate.getTime()-4*24*3600*1000)
+    //TODO 判断某一天，是否已经写日志了
+    for(var i=0; i<5; i++){
+      var tempDate = new Date(monDate.getTime()+i*24*3600*1000);
+      var yy = tempDate.getFullYear();
+      var mm = (tempDate.getMonth()+1);
+      mm = mm>9 ? mm : '0'+ mm;
+      var dd = tempDate.getDate();
+      dd = dd>9 ? dd : '0'+dd;
+      var yymmdd = yy+'-'+mm+'-'+dd;
+      dt.find('#startTimestr'+i).val(yymmdd+h9);//开始时间
+      dt.find('#endTimestr'+i).val(yymmdd+h18);//结束时间
+      dt.find('#manHour'+i).val(manHour);//历时
+      dt.find('#workPlace'+i).val(workPlace);//工作地点
+      dt.find('#baseSchema'+i).val(baseSchema);//任务类型
+      dt.find('#workTitle'+i).val(yymmdd+'工作日志');//任务主题
+      dt.find('#taskDescribe'+i).val(jobs['d'+(i+1)]);//任务内容
+//      monDate+=1;
     }
 
+  }
+
+  /**
+   *添加日志,从pmo那里拷过来的
+   */
+  function addDaily(){
+    var rowcount=$("tr[name='endtr']").attr("rowIndex");
+    var detailCount=(rowcount-2)/2;
+    $("tr[name='endtr']").before("<tr>"+
+        "<td>"+
+        "	<input type='text' style='width: 97%' id='projectNo"+detailCount+"'"+
+        "	flag='projectNo' name='wds["+detailCount+"].projectNo' value='US-20' onfocus=\"findProjectNo(this);\" />"+
+        "</td>"+
+        "<td>"+
+        "	<input type='text' style='width: 97%' id='projectName"+detailCount+"'"+
+        "	flag='projectName' 	name='wds["+detailCount+"].projectName' readOnly />"+
+        "</td>"+
+        "<td>"+
+        "	<input type='text' style='width: 97%' id='startTimestr"+detailCount+"'"+
+        "	flag='startTimestr'	name='startTimestr["+detailCount+"]'  onchange=\"produceHour2(this,'s')\" "+
+        "		onclick=\"WdatePicker({dateFmt:'yyyy-MM-dd HH:mm:ss',startDate:'%y-%M-%d 09:00:00'});\" readOnly />"+
+        "</td>"+
+        "<td>"+
+        "	<input type='text' style='width: 97%' id='endTimestr"+detailCount+"'  onchange=\"produceHour2(this,'e')\" "+
+        "	flag='endTimestr'	name='endTimestr["+detailCount+"]'"+
+        "		onclick=\"WdatePicker({dateFmt:'yyyy-MM-dd HH:mm:ss',startDate:'%y-%M-%d 18:00:00'});\"  readOnly />"+
+        "</td>"+
+        "<td>"+
+        "	<input type='text' style='width: 97%' id='manHour"+detailCount+"' flag='manHour' name='manHours["+detailCount+"]'  onPropertyChange=\"checkHour1(this);\"  />"+
+        "</td>"+
+        "<td>"+
+        "	<select id='baseSchema"+detailCount+"' style='width:98%'"+
+        "	flag='baseSchema'	name='wds["+detailCount+"].baseSchema' >"+
+        "		<option value='WF:UL_DA_CTK'>日常任务</option>"+
+        "		<option value='WF:UL_DA_PAT'>售前任务</option>"+
+        "		<option value='WF:UL_DA_IFT'>实施任务</option>"+
+        "		<option value='WF:UL_DA_DLPS'>开发任务</option>"+
+        "		<option value='WF:UL_DA_TEPS'>测试任务</option>"+
+        "	</select>"+
+        "</td>"+
+        "<td>"+
+        "	<select id='workPlace"+detailCount+"' style='width:98%'"+
+        "	flag='workPlace'	name='wds["+detailCount+"].workPlace' >"+
+        "		<option value='公司'>公司</option>"+
+        "		<option value='现场'>现场</option>"+
+        "	</select>"+
+        "</td>"+
+        "<td>"+
+        "	<input type='text' id='workTitle"+detailCount+"' style='width: 97%'"+
+        "	flag='workTitle' maxlength='85'	name='wds["+detailCount+"].workTitle' value='' />"+
+        "</td>"+
+        "<td align='center'>"+
+        "	<a href='javascript:;' onclick='delDaily(this);'><img"+
+        "			id='delImg'"+
+        "			src='/ultrapmo/common/style/blue/images/del_user.jpg' /> </a>"+
+        "</td>"+
+        "</tr>"+
+        "<tr>"+
+        "	<td colspan='9'>"+
+        "		<textArea id='taskDescribe"+detailCount+"' name='wds["+detailCount+"].taskDescribe'"+
+        "		flag='taskDescribe'	rows='2' style='width:100%' onkeydown=\"check(this);\"></textArea>"+
+        "	</td>"+
+        "</tr>");
+  }
+
+  /**
+   * 识别验证码，自动登录
+   * @returns {*}
+   */
+  function autoLogin() {
     //如果要用在greasemonkey脚本里,可以把下面的代码放在image的onload事件里
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext("2d");
@@ -99,27 +242,33 @@
     }
 
     $('#checkCode').val(captcha);
-    var flag = $('#emptyValidatorLi').css("visibility");
-    if(flag === 'hidden'){
+//    var flag = $('#emptyValidatorLi').css("visibility");
+//    if(flag === 'hidden'){
       $('.login-btn').trigger('click');
-    }else{
-      $('#password').val('');
-      $('#passwordtip').remove();
-      $('#password').parent().before("<div id='passwordtip' style='color: red;'>密码好像不正确噢！</div>")
-    }
+//      notify('登录成功', '亲～，秘书再也不用找你回邮件了')
+//    }else{
+//      $('#password').val('');
+//      $('#passwordtip').remove();
+//      $('#password').parent().before("<div id='passwordtip' style='color: red;'>密码好像不正确噢！</div>")
+//    }
     return captcha; //写入目标文本框
+
   }
 
+  /**
+   *
+   */
   function showDailyNotify(){
-
     var h = (new Date()).getHours();
-
     if(h === 17){
       notify()
     }
     setTimeout(showDailyNotify, 1000*60*30)
   }
 
+  /**
+   * 启用桌面提醒
+   */
   function openNotify(){
     var userContainer = $('.user_name');
     if(userContainer.length>0){
@@ -136,10 +285,13 @@
     }
   }
 
-  function notify() {
+  /**
+   * 提醒
+   */
+  function notify(title, content) {
     if (window.webkitNotifications) {
       if (window.webkitNotifications.checkPermission() == 0) {
-        var notification_test = window.webkitNotifications.createNotification("http://images.cnblogs.com/cnblogs_com/flyingzl/268702/r_1.jpg", '标题', '亲嘞～～是不是该写日报了');
+        var notification_test = window.webkitNotifications.createNotification("http://images.cnblogs.com/cnblogs_com/flyingzl/268702/r_1.jpg", title ? title: '标题', content ? content : '亲嘞～～是不是该写日报了');
         notification_test.display = function() {}
         notification_test.onerror = function() {}
         notification_test.onclose = function() {}

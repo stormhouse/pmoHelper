@@ -1,11 +1,213 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-	<!--<link rel="stylesheet" type="text/css" href="" />-->
-	<title></title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <style>
+    .width-350{
+      width: 350px;
+    }
+  </style>
+  <link rel="stylesheet" type="text/css" href="styles/bootstrap.css"/>
+  <link rel="stylesheet" type="text/css" href="styles/bootstrap-theme.css"/>
+  <link rel="stylesheet" type="text/css" href="styles/min.css"/>
+  <title></title>
 </head>
-<body style="width: 300px; height: 50px;">
+<body style="width: 600px;">
 <!--<input type="button" value="启用桌面提醒" onclick="window.webkitNotifications.checkPermission();">-->
+<!--<div class="control-group">-->
+<!--<label class="control-label">Button</label>-->
+
+<!--&lt;!&ndash; Button &ndash;&gt;-->
+<!--<div class="controls">-->
+<!--<button id="daily-submit" class="btn btn-default">Button</button>-->
+<!--</div>-->
+<!--</div>-->
+
+<form class="form-horizontal">
+  <fieldset>
+    <div style="margin: 10px; text-align: center;"><strong>pmo助手</strong>：批量填写一周日报</div>
+
+    <div class="control-group">
+      <!-- Text input-->
+      <label class="control-label" for="itemcode">项目编号</label>
+
+      <div class="controls">
+        <input id="itemcode" type="text" placeholder="UP-20" style="width: 350px;height: 25px;" class="width-350 input-xlarge output-value">
+      </div>
+    </div>
+
+    <div class="control-group">
+      <!-- Select Basic -->
+      <label class="control-label">任务类型</label>
+
+      <div class="controls">
+        <select class="width-350 input-xlarge " id="baseSchema" style="width: 350px;">
+          <option value="WF:UL_DA_DLPS">开发任务</option>
+          <option value="WF:UL_DA_CTK">日常任务</option>
+          <option value="WF:UL_DA_PAT">售前任务</option>
+          <option value="WF:UL_DA_IFT">实施任务</option>
+          <option value="WF:UL_DA_TEPS">测试任务</option>
+        </select>
+      </div>
+
+    </div>
+
+    <div class="control-group">
+      <!-- Textarea -->
+      <label class="control-label">一</label>
+
+      <div class="controls">
+        <div class="textarea">
+          <textarea id="d1" type="" class="output-value width-350"> </textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-group">
+
+      <!-- Textarea -->
+      <label class="control-label">二</label>
+
+      <div class="controls">
+        <div class="textarea">
+          <textarea id="d2" type="" class="output-value width-350"> </textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-group">
+
+      <!-- Textarea -->
+      <label class="control-label">三</label>
+
+      <div class="controls">
+        <div class="textarea">
+          <textarea id="d3" type="" class="output-value width-350"> </textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-group">
+
+      <!-- Textarea -->
+      <label class="control-label">四</label>
+
+      <div class="controls">
+        <div class="textarea">
+          <textarea id="d4" type="" class="output-value width-350"> </textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-group">
+
+      <!-- Textarea -->
+      <label class="control-label">五</label>
+
+      <div class="controls">
+        <div class="textarea">
+          <textarea id="d5" type="" class="output-value width-350"> </textarea>
+        </div>
+      </div>
+    </div>
+    <div class="control-group">
+      <!-- Button -->
+      <div class="controls">
+        <input id="daily-submit" class="btn btn-default" type="button" value="写日报去了">
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label" style="color: #F00;">*&nbsp;注意</label>
+      <div class="controls">
+        <ul>
+          <li>没有判断是否某天已写日报，请不要单独每天提交</li>
+          <li>节假日未做处理，请单独检查日报填写情况</li>
+          <li>时间有限，开发仓促，功能添加&提交bug: wangyunfu@ultrapower.com.cn</li>
+        </ul>
+      </div>
+    </div>
+  </fieldset>
+</form>
+<script>
+  document.domain = '60.247.77.194'
+</script>
+
+<script src="lib/jquery.js"></script>
+<script src="lib/backbone-localstorage.js"></script>
+<script>
+
+  var commit_url = "http://60.247.77.194/ultrapmo/myproject/saveDaily.action";
+
+  var s = new StormStore('pmo');
+  var dailyObj = s.find({id: 'pmo'});
+  if (!dailyObj)
+    dailyObj = s.create({id: 'pmo'});
+  fillFormData();
+
+  $('#daily-submit').click(function () {
+    s.update(dailyObj);
+    var obj = {
+      itemcode: $('#itemcode').val(),
+      baseSchema: $('#baseSchema').val(),
+      jobs : {
+        d1: $('#d1').val(),
+        d2: $('#d2').val(),
+        d3: $('#d3').val(),
+        d4: $('#d4').val(),
+        d5: $('#d5').val()
+      }
+
+    }
+    localStorage.dailyJob = JSON.stringify(obj)
+    window.open('http://60.247.77.194/ultrapmo/myproject/dailyBatchAdd.action');
+//    $.ajax({
+//        converterTz: false,
+//        async: true,
+//        type: 'post',
+//        url: commit_url,
+//        data: obj,
+//        dataType: 'json',
+//        success: function (data) {
+//          alert(data);
+//        },
+//        error: function (data, textStatus) {
+//          alert(data);
+//          alert(textStatus);
+//        }
+//      });
+  });
+  $('.output-value').blur(function(){
+    updateFormData();
+  });
+
+  $('#baseSchema').change(function(){
+    updateFormData();
+  });
+
+  function updateFormData() {
+    var dailyObj = s.find({id: 'pmo'});
+    dailyObj.itemcode = $('#itemcode').val();
+    dailyObj.baseSchema = $('#baseSchema').val();
+    dailyObj.d1 = $('#d1').val();
+    dailyObj.d2 = $('#d2').val();
+    dailyObj.d3 = $('#d3').val();
+    dailyObj.d4 = $('#d4').val();
+    dailyObj.d5 = $('#d5').val();
+    s.update(dailyObj);
+  }
+
+  function fillFormData() {
+    var dailyObj = s.find({id: 'pmo'});
+    $('#itemcode').val(dailyObj.itemcode);
+    $('#baseSchema').val(dailyObj.baseSchema);
+    $('#d1').val(dailyObj.d1);
+    $('#d2').val(dailyObj.d2);
+    $('#d3').val(dailyObj.d3);
+    $('#d4').val(dailyObj.d4);
+    $('#d5').val(dailyObj.d5);
+  }
+
+</script>
 </body>
 </html>
